@@ -1,0 +1,5 @@
+.env
+watch.log
+watch.log.old
+watch.pid
+camply_campsites.json
