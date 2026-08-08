@@ -1,16 +1,16 @@
 name: Campsite Watch
 
-# Runs on GitHub's servers, so it keeps hunting whether or not your
-# laptop is on. Free-tier scheduled workflows are best-effort: GitHub
-# often delays them a few minutes and can skip a run under heavy load.
-# Expect a real cadence closer to every 10-20 minutes.
+# GitHub's free-tier cron is unreliable — triggers get delayed under load and
+# sometimes dropped entirely. So instead of "fire a 30-second job every 10
+# minutes" (which loses a full slot every time a trigger is missed), this fires
+# hourly and each run polls continuously for ~55 minutes using camply's own
+# --search-forever loop. A delayed or dropped trigger then costs a gap, not the
+# whole schedule, and camply dedupes notifications in-process across the hour.
 on:
   schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch: # lets you trigger a run by hand from the Actions tab
+    - cron: "3 * * * *" # a few minutes past the hour: the top of the hour is the most congested slot
+  workflow_dispatch:
 
-# If a run is still going when the next one fires, skip the new one
-# rather than stacking up duplicate searches.
 concurrency:
   group: campsite-watch
   cancel-in-progress: false
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   search:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 70
 
     steps:
       - uses: actions/checkout@v4
@@ -30,10 +30,9 @@ jobs:
       - name: Install camply
         run: pip install --quiet camply==0.34.2
 
-      # Remembers which campsites were already reported, so a site that
-      # stays open for an hour notifies once instead of six times.
-      # Key is unique per run so each run writes a fresh entry;
-      # restore-keys pulls the most recent one back in.
+      # Carries "already reported" state across hourly runs, so a site that
+      # stays open doesn't re-notify every hour. Within an hour, camply's own
+      # in-process dedupe handles it.
       - name: Restore seen-campsites state
         uses: actions/cache@v4
         with:
@@ -44,11 +43,14 @@ jobs:
       - name: Ensure state file exists
         run: '[ -f camply_campsites.json ] || echo "[]" > camply_campsites.json'
 
-      - name: Search
+      - name: Search for ~55 minutes
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
-          camply campsites \
+          # `timeout` kills camply at 55m and exits 124 — that is the expected,
+          # successful outcome here, so only 124 and 0 count as success.
+          set +e
+          timeout 55m camply campsites \
             --campground 232466 \
             --campground 232465 \
             --campground 259031 \
@@ -63,6 +65,15 @@ jobs:
             --nights 1 \
             --weekends \
             --notifications ntfy \
-            --search-once \
+            --search-forever \
+            --polling-interval 10 \
             --offline-search \
             --offline-search-path camply_campsites.json
+          code=$?
+          set -e
+          if [ $code -eq 124 ] || [ $code -eq 0 ]; then
+            echo "Search window finished cleanly (exit $code)."
+            exit 0
+          fi
+          echo "camply failed with exit $code"
+          exit $code
