@@ -19,7 +19,27 @@ National Parks, and pushes a notification to your phone the moment one appears.
 > `openssl rand -hex 5`, update `.env`, update the `NTFY_TOPIC` repo secret, and
 > resubscribe on your phone.
 
-## Running it
+## How it runs
+
+**Primary: GitHub Actions** — `.github/workflows/watch.yml` searches every ~10
+minutes on GitHub's servers, so it keeps working with your laptop closed or off.
+Nothing to start or babysit.
+
+```sh
+gh run list --workflow=watch.yml        # recent runs
+gh workflow run watch.yml               # search right now
+gh run view --log                       # what the last run saw
+```
+
+The `NTFY_TOPIC` repo secret holds the topic name; it is encrypted and not
+visible in the public repo. Scheduled runs on the free tier are best-effort —
+GitHub delays them under load, so real cadence is closer to 10-20 minutes.
+
+**Backup: the local Mac watcher**, below. Only useful if you want a second
+source of alerts; it needs the Mac awake and plugged in, and it does not share
+"already notified" state with GitHub, so you may get duplicates.
+
+## Running it locally
 
 ```sh
 cd ~/Developer/campsite-watch
