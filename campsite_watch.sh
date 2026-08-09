@@ -34,48 +34,39 @@ set +a
 # CAMPGROUND IDs — all verified live against recreation.gov
 # -------------------------------------------------------------
 # Mount Rainier National Park (rec area #2835)
-COUGAR_ROCK=232466      # Cougar Rock Campground
-OHANAPECOSH=232465      # Ohanapecosh Campground
-WHITE_RIVER=259031      # White River Campground
-
-# Olympic National Park (rec area #2881)
-HOH=247592              # Hoh Rainforest Campground
-KALALOCH=232464         # Kalaloch
-MORA=247591             # Mora Campground
-SOL_DUC=251906          # Sol Duc Hot Springs Resort Campground
-FAIRHOLME=259084        # Fairholme Campground
-STAIRCASE=247586        # Staircase Campground
+CAMPGROUNDS="--campground 232466 --campground 232465 --campground 259031"
+#                         ^Cougar Rock     ^Ohanapecosh     ^White River
+#
+# Olympic is no longer watched. If you ever want it back, the IDs are:
+#   Hoh Rainforest 247592 · Kalaloch 232464 · Mora 247591
+#   Sol Duc 251906 · Fairholme 259084 · Staircase 247586
 
 # -------------------------------------------------------------
 # THE WATCH
 # -------------------------------------------------------------
-# Window 2026-08-21 -> 2026-09-06 with --weekends resolves to the
-# six Fri/Sat booking nights of your three target weekends:
-#   Aug 21, Aug 22, Aug 28, Aug 29, Sep 4, Sep 5
+# Three specific Saturday nights: arrive Sat, leave Sun.
+#   Sept 5, Sept 19, Sept 26 (2026)
 #
-# --nights 1        : any single night counts as a hit.
-#                     Change to 2 to require both Fri AND Sat.
-# --search-forever  : keeps hunting after the first hit, so you
-#                     hear about better sites that free up later.
-#                     It won't re-notify about the same campsite.
-# --polling-interval: minutes between checks. 10 is the sweet
-#                     spot; 5 is the floor camply allows and
-#                     risks rate-limiting from recreation.gov.
+# Each is searched as its own exact one-night window. Using a single
+# wide date range with --weekends would also match Sept 11/12/18/25
+# and notify about nights you didn't ask for.
+NIGHTS="2026-09-05:2026-09-06 2026-09-19:2026-09-20 2026-09-26:2026-09-27"
 
-camply campsites \
-  --campground "$COUGAR_ROCK" \
-  --campground "$OHANAPECOSH" \
-  --campground "$WHITE_RIVER" \
-  --campground "$HOH" \
-  --campground "$KALALOCH" \
-  --campground "$MORA" \
-  --campground "$SOL_DUC" \
-  --campground "$FAIRHOLME" \
-  --campground "$STAIRCASE" \
-  --start-date 2026-08-21 \
-  --end-date   2026-09-06 \
-  --nights 1 \
-  --weekends \
-  --polling-interval 10 \
-  --search-forever \
-  --notifications ntfy
+# --nights 1 : one night per hit. Change the pairs above to span two
+#              days (e.g. 2026-09-05:2026-09-07) plus --nights 2 if you
+#              ever want Fri+Sat together.
+while :; do
+  for pair in $NIGHTS; do
+    echo "--- arriving ${pair%%:*} ---"
+    camply campsites \
+      $CAMPGROUNDS \
+      --start-date "${pair%%:*}" \
+      --end-date   "${pair##*:}" \
+      --nights 1 \
+      --notifications ntfy \
+      --search-once \
+      --offline-search \
+      --offline-search-path "$(dirname "$0")/camply_campsites.json"
+  done
+  sleep 600   # 10 minutes; 5 is camply's floor and risks rate-limiting
+done

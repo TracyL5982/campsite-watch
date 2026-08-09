@@ -1,8 +1,12 @@
-# Campsite Watch — Rainier & Olympic, Aug/Sept 2026
+# Campsite Watch — Mount Rainier, Sept 2026
 
-Watches recreation.gov for Fri/Sat openings on your three target weekends
-(**Aug 22, Aug 29, Sept 5**) across 9 campgrounds in Mount Rainier and Olympic
-National Parks, and pushes a notification to your phone the moment one appears.
+Watches recreation.gov for openings on three specific Saturday nights —
+**Sept 5, Sept 19, Sept 26** — across the three Mount Rainier campgrounds, and
+pushes a notification to your phone the moment one appears.
+
+Each night is searched as its own exact one-night window (arrive Sat, leave
+Sun). A single wide range with `--weekends` would also match Sept 11/12/18/25,
+so this avoids alerts for nights you didn't ask about.
 
 ## One-time phone setup
 
@@ -55,33 +59,49 @@ it plugged in if you want overnight coverage.
 
 ## What it searches
 
-Window `2026-08-21` → `2026-09-06` with `--weekends`, which resolves to exactly
-six booking nights: Aug 21, 22, 28, 29 and Sep 4, 5. Polls every 10 minutes and
-keeps going after the first hit (`--search-forever`), so you'll also hear about
-better sites that free up later. It won't notify twice about the same campsite.
+Three one-night windows, re-checked every 10 minutes:
 
-| Park | Campground | ID |
-|---|---|---|
-| Mt Rainier | Cougar Rock | 232466 |
-| Mt Rainier | Ohanapecosh | 232465 |
-| Mt Rainier | White River | 259031 |
-| Olympic | Hoh Rainforest | 247592 |
-| Olympic | Kalaloch | 232464 |
-| Olympic | Mora | 247591 |
-| Olympic | Sol Duc Hot Springs Resort | 251906 |
-| Olympic | Fairholme | 259084 |
-| Olympic | Staircase | 247586 |
+| Arrive | Depart |
+|---|---|
+| Sat 2026-09-05 | Sun 2026-09-06 |
+| Sat 2026-09-19 | Sun 2026-09-20 |
+| Sat 2026-09-26 | Sun 2026-09-27 |
 
-All IDs verified live against recreation.gov on 2026-08-05.
+Across the three Mount Rainier campgrounds:
+
+| Campground | ID |
+|---|---|
+| Cougar Rock | 232466 |
+| Ohanapecosh | 232465 |
+| White River | 259031 |
+
+IDs verified live against recreation.gov. Olympic National Park is no longer
+watched; its IDs are kept in a comment in `campsite_watch.sh` in case you want
+them back.
+
+`--offline-search` keeps a record of what's already been reported, so a site
+that stays open for hours notifies once rather than every 10 minutes.
 
 ## Tweaks
 
-Edit `campsite_watch.sh`:
+Both `campsite_watch.sh` and `.github/workflows/watch.yml` share the same two
+knobs — change them in **both** places, or only one runner will follow:
 
-- **Want both Fri and Sat?** Change `--nights 1` to `--nights 2`.
-- **Fewer campgrounds?** Delete the `--campground "$NAME"` lines you don't want.
-- **Faster polling?** `--polling-interval 5` is the floor camply allows. Not
-  recommended — recreation.gov may rate-limit you.
+- **Different dates?** Edit the `NIGHTS` list of `arrive:depart` pairs.
+- **Fri + Sat together?** Widen a pair to span two days
+  (`2026-09-05:2026-09-07`) and set `--nights 2`.
+- **More campgrounds?** Add `--campground <id>` to `CAMPGROUNDS`.
+- **Faster polling?** 5 minutes is camply's floor. Not recommended —
+  recreation.gov may rate-limit you.
+
+## A caveat on late-September dates
+
+Rainier campgrounds close for the season in early-to-mid October, and exact
+closing dates shift year to year. Sept 5 is comfortably in season. If Sept 19 or
+26 ever fall outside a campground's operating window, that campground simply
+never returns a hit for that night — the watch stays silent rather than erroring,
+so silence isn't proof the watcher is broken. Check the campground page on
+recreation.gov if a date goes suspiciously quiet.
 
 ## When you get an alert
 
