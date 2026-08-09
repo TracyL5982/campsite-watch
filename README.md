@@ -117,14 +117,16 @@ knobs — change them in **both** places, or only one runner will follow:
 - **Faster polling?** 5 minutes is camply's floor. Not recommended —
   recreation.gov may rate-limit you.
 
-## A caveat on season boundaries
+## Silence is ambiguous — know which kind you have
 
-Rainier campgrounds close for the season in early-to-mid October, and exact
-closing dates shift year to year. Sept 5 is comfortably in season. If Sept 19 or
-26 ever fall outside a campground's operating window, that campground simply
-never returns a hit for that night — the watch stays silent rather than erroring,
-so silence isn't proof the watcher is broken. Check the campground page on
-recreation.gov if a date goes suspiciously quiet.
+A watch on an unreservable date looks exactly like a watch on a reservable date
+that hasn't opened up yet: nothing happens, no error. That is how Sept 19 and
+Sept 26 nearly went unnoticed.
+
+Before trusting a quiet watch, run the availability check above. If the date
+shows anything other than all-`Not Reservable`, silence just means no
+cancellation yet. If it's all `Not Reservable`, the watch is pointless and you
+should switch to a first-come-first-served plan instead.
 
 ## When you get an alert
 
