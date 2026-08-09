@@ -33,28 +33,33 @@ set +a
 # -------------------------------------------------------------
 # CAMPGROUND IDs — all verified live against recreation.gov
 # -------------------------------------------------------------
-# Mount Rainier National Park (rec area #2835)
-CAMPGROUNDS="--campground 232466 --campground 232465 --campground 259031"
-#                         ^Cougar Rock     ^Ohanapecosh     ^White River
-#
-# Olympic is no longer watched. If you ever want it back, the IDs are:
+# Cougar Rock, Mount Rainier NP. The only campground here worth
+# watching — verified against recreation.gov's availability API
+# on 2026-08-09:
+#   Ohanapecosh (232465) closed all 2026 for rehab, reopens 2027
+#   White River (259031) is first-come-first-served only; all 107
+#     sites report "Not Reservable" on every date, so no watcher
+#     can ever catch one
+CAMPGROUNDS="--campground 232466"
+
+# Olympic is no longer watched. If you ever want it back:
 #   Hoh Rainforest 247592 · Kalaloch 232464 · Mora 247591
 #   Sol Duc 251906 · Fairholme 259084 · Staircase 247586
 
 # -------------------------------------------------------------
 # THE WATCH
 # -------------------------------------------------------------
-# Three specific Saturday nights: arrive Sat, leave Sun.
-#   Sept 5, Sept 19, Sept 26 (2026)
+# One night: arrive Sat Sept 5, leave Sun Sept 6.
 #
-# Each is searched as its own exact one-night window. Using a single
-# wide date range with --weekends would also match Sept 11/12/18/25
-# and notify about nights you didn't ask for.
-NIGHTS="2026-09-05:2026-09-06 2026-09-19:2026-09-20 2026-09-26:2026-09-27"
+# Sept 19 and Sept 26 were dropped because they cannot be reserved.
+# Cougar Rock's last reservable night is 2026-09-13; from Sept 14 all
+# 176 sites flip to "Not Reservable" and the campground runs
+# first-come-first-served until it closes. For those weekends you have
+# to drive up and claim a site, ideally Friday morning.
+NIGHTS="2026-09-05:2026-09-06"
 
-# --nights 1 : one night per hit. Change the pairs above to span two
-#              days (e.g. 2026-09-05:2026-09-07) plus --nights 2 if you
-#              ever want Fri+Sat together.
+# --nights 1 : one night per hit. Widen the pair above (e.g.
+#              2026-09-04:2026-09-06) plus --nights 2 for Fri+Sat.
 while :; do
   for pair in $NIGHTS; do
     echo "--- arriving ${pair%%:*} ---"

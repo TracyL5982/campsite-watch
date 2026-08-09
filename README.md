@@ -1,12 +1,30 @@
-# Campsite Watch — Mount Rainier, Sept 2026
+# Campsite Watch — Cougar Rock, Sat Sept 5 2026
 
-Watches recreation.gov for openings on three specific Saturday nights —
-**Sept 5, Sept 19, Sept 26** — across the three Mount Rainier campgrounds, and
-pushes a notification to your phone the moment one appears.
+Watches recreation.gov for an opening at **Cougar Rock Campground** (Mount
+Rainier) on **Sat Sept 5 → Sun Sept 6, 2026**, and pushes a notification to your
+phone the moment one appears.
 
-Each night is searched as its own exact one-night window (arrive Sat, leave
-Sun). A single wide range with `--weekends` would also match Sept 11/12/18/25,
-so this avoids alerts for nights you didn't ask about.
+## Why only one campground and one date
+
+Checked against recreation.gov's availability API on 2026-08-09:
+
+| | |
+|---|---|
+| **Ohanapecosh** (232465) | Closed for all of 2026 — rehabilitation project, reopens 2027 |
+| **White River** (259031) | First-come-first-served only. All 107 sites report `Not Reservable` on every date, so no watcher can ever catch one |
+| **Cougar Rock** (232466) | Reservable **through Sept 13 only**. From Sept 14 all 176 sites flip to `Not Reservable` and it runs FCFS until it closes |
+
+That rules out Sept 19 and Sept 26 entirely — they were never reservable, so a
+watch on them would have stayed silent forever with no way to tell that apart
+from "nothing available yet."
+
+**"Not reservable" does not mean closed.** Those campgrounds are open and you can
+camp there; the sites just aren't handed out through recreation.gov. For Sept 19
+and Sept 26 the move is to drive up and claim a site first-come-first-served —
+Friday morning, since Rainier's FCFS spots typically fill by midday.
+
+Sept 5 is a genuinely live target: it currently shows 66 sites reserved and 64
+not-yet-released, so it can open up via either a cancellation or a later release.
 
 ## One-time phone setup
 
@@ -59,28 +77,33 @@ it plugged in if you want overnight coverage.
 
 ## What it searches
 
-Three one-night windows, re-checked every 10 minutes:
+One night — arrive **Sat 2026-09-05**, depart Sun 2026-09-06 — at Cougar Rock
+(campground `232466`), re-checked every 10 minutes.
 
-| Arrive | Depart |
-|---|---|
-| Sat 2026-09-05 | Sun 2026-09-06 |
-| Sat 2026-09-19 | Sun 2026-09-20 |
-| Sat 2026-09-26 | Sun 2026-09-27 |
-
-Across the three Mount Rainier campgrounds:
-
-| Campground | ID |
-|---|---|
-| Cougar Rock | 232466 |
-| Ohanapecosh | 232465 |
-| White River | 259031 |
-
-IDs verified live against recreation.gov. Olympic National Park is no longer
-watched; its IDs are kept in a comment in `campsite_watch.sh` in case you want
-them back.
+Olympic National Park is no longer watched; its IDs are kept in a comment in
+`campsite_watch.sh` in case you want them back.
 
 `--offline-search` keeps a record of what's already been reported, so a site
 that stays open for hours notifies once rather than every 10 minutes.
+
+## Checking whether a date is even reservable
+
+Before adding any date, confirm it's in the reservation system at all —
+otherwise you're waiting on something that can never arrive:
+
+```sh
+curl -s -H "User-Agent: Mozilla/5.0" \
+  "https://www.recreation.gov/api/camps/availability/campground/232466/month?start_date=2026-09-01T00%3A00%3A00.000Z" |
+python3 -c "
+import json,sys,collections
+d=json.load(sys.stdin); t=collections.defaultdict(collections.Counter)
+for s in d['campsites'].values():
+    for day,st in s['availabilities'].items(): t[day[:10]][st]+=1
+for day in sorted(t): print(day, dict(t[day]))"
+```
+
+`Not Reservable` on every site means FCFS or out of season — nothing to watch
+for. `Reserved` / `NYR` / `Available` mean the date is live.
 
 ## Tweaks
 
@@ -94,7 +117,7 @@ knobs — change them in **both** places, or only one runner will follow:
 - **Faster polling?** 5 minutes is camply's floor. Not recommended —
   recreation.gov may rate-limit you.
 
-## A caveat on late-September dates
+## A caveat on season boundaries
 
 Rainier campgrounds close for the season in early-to-mid October, and exact
 closing dates shift year to year. Sept 5 is comfortably in season. If Sept 19 or

@@ -43,13 +43,18 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
-          # Mount Rainier only: Cougar Rock, Ohanapecosh, White River.
-          #
-          # Each target night is searched as its own exact one-night window
-          # (arrive Sat, leave Sun). A single wide window with --weekends would
-          # also match Sept 11/12/18/25 and notify about nights you don't want.
-          CAMPGROUNDS="--campground 232466 --campground 232465 --campground 259031"
-          NIGHTS="2026-09-05:2026-09-06 2026-09-19:2026-09-20 2026-09-26:2026-09-27"
+          # Cougar Rock only. Verified against recreation.gov's availability API
+          # on 2026-08-09:
+          #   Ohanapecosh (232465) — closed all 2026 for rehab, reopens 2027
+          #   White River (259031) — first-come-first-served only, all 107 sites
+          #                          report "Not Reservable" on every date
+          # Neither can ever produce a reservation, so watching them is dead weight.
+          CAMPGROUNDS="--campground 232466"
+
+          # Sept 5 only. Cougar Rock's last reservable night is 2026-09-13; from
+          # Sept 14 all 176 sites flip to "Not Reservable" (FCFS for the rest of
+          # the season), so Sept 19 and Sept 26 could never have produced a hit.
+          NIGHTS="2026-09-05:2026-09-06"
 
           DEADLINE=$(( SECONDS + 3300 ))   # ~55 minutes
           round=0
